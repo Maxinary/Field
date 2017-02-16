@@ -1,6 +1,9 @@
+const size = 4;
+
+
 const canvas = document.getElementById("draw");
-canvas.width = 500;
-canvas.height = 500;
+canvas.width = 500/size;
+canvas.height = 500/size;
 const context = canvas.getContext("2d");
 
 function square(v){
@@ -87,7 +90,30 @@ class PointCharge{
   }
 }
 
-charges = [new PointCharge(new Tuple(200, 250), 1), new PointCharge(new Tuple(300, 250), -1)];
+charges = [
+  new PointCharge(new Tuple(200, 250), 1), 
+  new PointCharge(new Tuple(300, 250), -1)
+];
+
+canvas.onclick = function(event){
+  var already = -1;
+  var mouse = new Tuple(event.clientX, event.clientY);
+  for(var i in charges){
+    if(charges[i].pos.dist(mouse) < 30){
+      already = i;
+    }
+  }
+  if(already == -1){
+    charges.push(new PointCharge(mouse, 1));
+  }else{
+    if(charges[already].charge == 1){
+      charges[already].charge = -1;
+    }else{
+      charges.splice(already, 1);
+    }
+  }
+  draw();
+};
 
 function chargeAtPoint(point, charges){
   var chargeTup = new Tuple(0, 0);
@@ -98,18 +124,25 @@ function chargeAtPoint(point, charges){
   return chargeTup;
 }
 
-const size = 1;
-for(var i=0; i<canvas.width; i+=size){
-  for(var j=0; j<canvas.height; j+=size){
-    var chargeHere = chargeAtPoint(new Tuple(i, j), charges);
-    var strr = sigmoid(500*Math.log(chargeHere.length()+1)-4);
-    var clr = fromHSL([(360-chargeHere.theta()/(Math.PI)*180)%360, strr, strr/2]);
-    context.fillStyle = "rgb("+clr+")";
-    context.fillRect(i, j, size, size);
-  } 
+function draw(){
+  for(var i=0; i<canvas.width*size; i+=size){
+    for(var j=0; j<canvas.height*size; j+=size){
+      var chargeHere = chargeAtPoint(new Tuple(i, j), charges);
+      var strr = sigmoid(500*Math.log(chargeHere.length()+1)-4);
+      var clr = fromHSL([(360-chargeHere.theta()/(Math.PI)*180)%360, strr, strr/2]);
+      context.fillStyle = "rgb("+clr+")";
+      context.fillRect(i/size, j/size, 1, 1);
+    } 
+  }
+  
+  for(var k in charges){
+    if(charges[k].charge > 0){
+      context.fillStyle = "#000";
+    }else{
+      context.fillStyle = "#fff";
+    }
+    context.fillRect((charges[k].pos.x-8)/size, (charges[k].pos.y-8)/size, 15/size, 15/size);
+  }
 }
 
-context.fillStyle = "#000000";
-for(var k in charges){
-  context.fillRect(charges[k].pos.x-3, charges[k].pos.y-3, 7, 7);
-}
+draw();
